@@ -11,6 +11,7 @@ const path = require("path");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -32,7 +33,11 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 const sessionOptions = {
-  secret: "mysupersecretcode",
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    touchAfter: 24 * 3600,
+  }),
+  secret: process.env.SECRET || "mysupersecretcode",
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -43,10 +48,6 @@ const sessionOptions = {
 };
 
 // ================= ROUTES =================
-// app.get("/", (req, res) => {
-//   res.send("Hi, I am root");
-// });
-
 app.get("/", (req, res) => {
   res.redirect("/listings");
 });
@@ -94,23 +95,6 @@ app.use((req, res, next) => {
   res.locals.currUser = req.user;
   next();
 });
-
-// ================= DEMO USER =================
-// app.get("/demouser", async (req, res) => {
-//   try {
-//     let fakeUser = new User({
-//       email: "student@gmail.com",
-//       username: "delta-student",
-//     });
-
-//     let registeredUser = await User.register(fakeUser, "123456");
-
-//     res.send(registeredUser);
-
-//   } catch (e) {
-//     res.send("User already exists");
-//   }
-// });
 
 // Listings Routes // Reviews Routes
 app.use("/listings", listingRouter);
