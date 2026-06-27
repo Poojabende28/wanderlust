@@ -68,17 +68,25 @@ app.use((req, res, next) => {
 });
 
 // ================= DB CONNECT =================
-main()
-  .then(() => {
-    console.log("DB Connected");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+let isConnected = false;
 
 async function main() {
-await mongoose.connect(process.env.MONGO_URI);
+  if (isConnected) return;
+  await mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 30000,
+  });
+  isConnected = true;
+  console.log("DB Connected");
 }
+
+app.use(async (req, res, next) => {
+  try {
+    await main();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
