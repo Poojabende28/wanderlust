@@ -14,7 +14,7 @@ const session = require("express-session");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
-const User = require("./models/user.js"); // ✅ FIXED (User capital)
+const User = require("./models/user.js"); 
 
 const listingRouter = require("./routes/listing.js");
 const reviewsRouter = require("./routes/reviews.js");
@@ -47,6 +47,10 @@ const sessionOptions = {
 //   res.send("Hi, I am root");
 // });
 
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
+
 app.use(session(sessionOptions));
 app.use(flash());
 
@@ -73,7 +77,7 @@ main()
   });
 
 async function main() {
-  await mongoose.connect("mongodb://127.0.0.1:27017/wanderlust");
+await mongoose.connect(process.env.MONGO_URI);
 }
 
 app.use((req, res, next) => {
@@ -124,6 +128,10 @@ app.use((err, req, res, next) => {
 });
 
 // ================= SERVER =================
-app.listen(8080, () => {
-  console.log("Server listening on port 8080");
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(8080, () => {
+    console.log("Server listening on port 8080");
+  });
+}
+
+module.exports = app;
