@@ -1,7 +1,6 @@
-if(process.env.NODE_ENV != "production") {
-require("dotenv").config();
+if (process.env.NODE_ENV != "production") {
+  require("dotenv").config();
 }
-
 
 const express = require("express");
 const app = express();
@@ -15,7 +14,7 @@ const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
-const User = require("./models/user.js"); 
+const User = require("./models/user.js");
 
 const listingRouter = require("./routes/listing.js");
 const reviewsRouter = require("./routes/reviews.js");
@@ -27,7 +26,6 @@ app.set("views", path.join(__dirname, "views"));
 
 app.engine("ejs", ejsMate);
 
-
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -36,6 +34,7 @@ const sessionOptions = {
   store: MongoStore.create({
     mongoUrl: process.env.MONGO_URI,
     touchAfter: 24 * 3600,
+    crypto: { secret: process.env.SECRET || "mysupersecretcode" },
   }),
   secret: process.env.SECRET || "mysupersecretcode",
   resave: false,
@@ -47,6 +46,32 @@ const sessionOptions = {
   },
 };
 
+// ================= DB CONNECT =================
+mongoose.set("strictQuery", true);
+
+mongoose.connection.on("connected", () => {
+  console.log("DB Connected");
+});
+mongoose.connection.on("error", (err) => {
+  console.log("DB Connection Error:", err);
+});
+
+let connectionPromise = null;
+
+function connectDB() {
+  if (mongoose.connection.readyState === 1) {
+    return Promise.resolve();
+  }
+  if (!connectionPromise) {
+    connectionPromise = mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+    });
+  }
+  return connectionPromise;
+}
+
 // ================= ROUTES =================
 app.get("/", (req, res) => {
   res.redirect("/listings");
@@ -54,7 +79,6 @@ app.get("/", (req, res) => {
 
 app.use(session(sessionOptions));
 app.use(flash());
-
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -68,23 +92,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// ================= DB CONNECT =================
-let isConnected = false;
-
-async function main() {
-  if (isConnected) return;
-  await mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 30000,
-  });
-  isConnected = true;
-  console.log("DB Connected");
-}
-
 app.use(async (req, res, next) => {
   try {
-    await main();
+    await connectDB();
     next();
   } catch (err) {
+    connectionPromise = null;
     next(err);
   }
 });
