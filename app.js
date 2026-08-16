@@ -34,13 +34,15 @@ const sessionOptions = {
   store: MongoStore.create({
     mongoUrl: process.env.MONGO_URI,
     touchAfter: 24 * 3600,
-    crypto: { secret: process.env.SECRET || "mysupersecretcode" },
   }),
-  secret: process.env.SECRET || "mysupersecretcode",
+
+  secret: process.env.SECRET,
+
   resave: false,
   saveUninitialized: false,
+
   cookie: {
-    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
   },
