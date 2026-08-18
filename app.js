@@ -51,26 +51,42 @@ const sessionOptions = {
 // ================= DB CONNECT =================
 mongoose.set("strictQuery", true);
 
+
+mongoose.set("bufferCommands", false);
+
 mongoose.connection.on("connected", () => {
   console.log("DB Connected");
 });
 mongoose.connection.on("error", (err) => {
   console.log("DB Connection Error:", err);
 });
+mongoose.connection.on("disconnected", () => {
+  console.log("DB Disconnected");
+});
 
 let connectionPromise = null;
 
 function connectDB() {
+
   if (mongoose.connection.readyState === 1) {
     return Promise.resolve();
   }
+
   if (!connectionPromise) {
-    connectionPromise = mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 60000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-    });
+    connectionPromise = mongoose
+      .connect(process.env.MONGO_URI, {
+        serverSelectionTimeoutMS: 60000,
+        socketTimeoutMS: 45000,
+        maxPoolSize: 10,
+        bufferCommands: false,
+      })
+      .catch((err) => {
+     
+        connectionPromise = null;
+        throw err;
+      });
   }
+
   return connectionPromise;
 }
 
