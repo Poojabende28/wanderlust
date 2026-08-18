@@ -81,7 +81,7 @@ function connectDB() {
         bufferCommands: false,
       })
       .catch((err) => {
-     
+       
         connectionPromise = null;
         throw err;
       });
@@ -95,20 +95,6 @@ app.get("/", (req, res) => {
   res.redirect("/listings");
 });
 
-app.use(session(sessionOptions));
-app.use(flash());
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.use(new LocalStrategy(User.authenticate()));
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
-
-app.use((req, res, next) => {
-  res.locals.currUser = req.user;
-  next();
-});
 
 app.use(async (req, res, next) => {
   try {
@@ -119,6 +105,16 @@ app.use(async (req, res, next) => {
     next(err);
   }
 });
+
+app.use(session(sessionOptions));
+app.use(flash());
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
